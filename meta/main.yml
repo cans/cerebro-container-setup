@@ -1,0 +1,33 @@
+galaxy_info:
+  author: Nicolas CANIART
+  description: Run Cerebro for Elasticsearch in a container
+
+  issue_tracker_url: http://github.com/cans/cerebro-container-setup/issues
+  license: GPLv2
+  min_ansible_version: 2.5
+  min_ansible_container_version: 0.9.2
+  github_branch: master
+
+  platforms:
+
+  - name: Debian
+    versions:
+    - all
+    - 9
+    - 10
+  # Not tested on any other platform yet.
+  # - name: Fedora
+  #   versions:
+  #   - all
+  #   - 25
+
+  galaxy_tags:
+    - cerebro
+    - container
+    - docker
+    - elasticsearch
+    - kopf
+
+dependencies: []
+
+# vim: et:sw=2:syntax=yaml:ts=2:

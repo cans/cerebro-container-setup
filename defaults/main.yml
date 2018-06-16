@@ -1,0 +1,18 @@
+---
+cerebrosetup_config_filename: "application.conf"
+cerebrosetup_container_config_dir: "/opt/cerebro/conf"
+cerebrosetup_container_labels: {}
+cerebrosetup_container_log_dir: "/opt/cerebro/logs"
+cerebrosetup_container_memory: "512M"
+cerebrosetup_container_port: 9000
+cereborsetup_container_rootfs_ro: false
+cerebrosetup_container_state: started
+cerebrosetup_container_network_mode: "default"
+cerebrosetup_host_bind_address: '127.0.0.1'
+cerebrosetup_host_config_dir: "{{ playbook_dir }}/config/"
+cerebrosetup_host_log_dir: "/tmp"
+cerebrosetup_host_port: 9000
+cerebrosetup_image: "yannart/cerebro:latest"
+cerebrosetup_image_pull: false
+
+# vim: et:sw=2:syntax=yaml:ts=2:

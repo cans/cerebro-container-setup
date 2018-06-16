@@ -1,0 +1,25 @@
+---
+- name: "Generate Config for Cerebro"
+  template:
+    src: "cerebro/{{ cerebrosetup_config_filename }}"
+    dest: "{{ cerebrosetup_host_config_dir }}/{{ cerebrosetup_config_filename }}"
+
+- name: "Provision Docker Container"
+  docker_container:
+    cleanup: "yes"
+    hostname: "{{ cerebrosetup_container_name | default('cerebro') }}"
+    name: "{{ cerebrosetup_container_name | default('cerebro') }}"
+    image: "{{ cerebrosetup_image }}"
+    pull: "{{ cerebrosetup_image_pull }}"
+    read_only: "{{ cereborsetup_container_rootfs_ro }}"
+    network_mode: "{{ cerebrosetup_container_network_mode }}"
+    state: "{{ cerebrosetup_container_state }}"
+    published_ports: "{{ cerebrosetup_host_bind_address }}:{{cerebrosetup_host_port|default('9000')}}:{{ cerebrosetup_container_port }}"
+    labels: "{{ cerebrosetup_container_labels }}"
+    volumes:
+      - "{{ cerebrosetup_host_config_dir }}/{{ cerebrosetup_config_filename }}:{{ cerebrosetup_container_config_dir }}/{{ cerebrosetup_config_filename }}"
+      - "{{ cerebrosetup_host_log_dir }}:{{ cerebrosetup_container_log_dir }}"
+  register: cerebrosetup_container
+
+
+# vim: et:sw=2:syntax=yaml:ts=2:

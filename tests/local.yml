@@ -1,0 +1,20 @@
+---
+- import_playbook: ./test.yml
+
+- hosts: localhost
+  name: "Test Suite Post Clean Up"
+  vars_files:
+    - "../defaults/main.yml"
+    - "vars/overrides.yml"
+  tasks:
+    - name: "Remove created container"
+      docker_container:
+        name: cerebro
+        state: absent
+
+    - name: "Remove generated configuration file"
+      file:
+        path: "{{ cerebrosetup_host_config_dir }}/{{ cerebrosetup_config_filename }}"
+        state: absent
+
+# vim: et:sw=2:syntax=yaml:ts=2:

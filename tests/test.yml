@@ -1,0 +1,71 @@
+---
+- hosts: localhost
+  name: "Container State As Seen From the Host Test Suite"
+  gather_facts: false
+  vars_files:
+    - vars/overrides.yml
+
+  roles:
+    - role: "cans.directory-make"
+      dirmake_directories:
+        - path: "{{ cerebrosetup_host_config_dir }}"
+
+    - role: "cerebro-container-setup"
+      cerebrosetup_container_name: "cerebro"
+      cereabosetup_container_labels:
+        role: 'cerebro'
+      # cerebrosetup_host_log_dir: ""
+
+  tasks:
+    - name: "Add created container to inventory"
+      add_host:
+        name: "cerebro"
+        inventory_hostname: "cerebro"
+        groups:
+          - servers
+        ansible_connection: "docker"
+
+    - name: "Copy docker container facts to container host"
+      set_fact:
+        "{{ item.key }}": "{{item.value}}"
+      with_dict: "{{ cerebrosetup_container.ansible_facts.docker_container }}"
+      delegate_to: "cerebro"
+      delegate_facts: true
+
+    - name: "Check `application.conf` exists under `{{ cerebrosetup_host_config_dir }}`"
+      stat:
+        checksum_algorithm: 'sha1'
+        get_attributes: false
+        get_checksum: true
+        get_mime: false
+        path: "{{ cerebrosetup_host_config_dir }}/{{ cerebrosetup_config_filename }}"
+      register: host_config_file
+
+    - name: "Copy fact from host to container"
+      set_fact:
+        host_config_file: "{{host_config_file}}"
+      delegate_to: "cerebro"
+      delegate_facts: true
+
+    - name: "Check TCP port 9000 is open"
+      wait_for:
+        port: 9000
+        # Keep it long enough scala apps need time to spin-up, but small enough cause it adds that
+        # much add to the build duration
+        delay: 5  # Wait 5s. before making a first attempt to connect.
+
+
+- name: "Check the container's internal state"
+  hosts: servers
+  gather_facts: false
+  vars_files:
+    - "../defaults/main.yml"
+  tasks:
+
+    - name: "Ensure config file inside and outside of the container are the same."
+      raw: "sha1sum {{ cerebrosetup_container_config_dir }}/{{ cerebrosetup_config_filename }} | head -c 40"
+      register: container_config_file
+      changed_when: false
+      failed_when: "host_config_file.stat.checksum != container_config_file.stdout_lines[0]"
+
+# vim: et:sw=2:syntax=yaml:ts=2:

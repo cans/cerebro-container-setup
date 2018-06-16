@@ -1,0 +1,72 @@
+version: 2
+
+jobs:
+  build:
+    working_directory: ~/cerebro-container-setup
+    machine:
+      image: "circleci/classic:latest"
+    environment:
+      ANSIBLE_ROLE: cerebro-container-setup
+      TEST_REPORTS_DIR: ~/test-reports
+
+    steps:
+      - checkout
+
+      - run:
+          name: Create required directories
+          command: |
+             mkdir -p $TEST_REPORTS_DIR/ansible-lint.log ~/.virtualenvs ~/.ssh tests/roles
+             # One needs to concateante here any files that can alter the virtualenv in a way:
+             #   - setup.py: for the endpoints installed in $VIRTUAL_ENV/bin
+             #   - requirements.txt
+             #   - dev-requirements.txt
+             # Since we do a develop install of the code itself (cf. the '-e .' in dev-requirments.txt)
+             # it does not matter.
+             cat tests/requirements.txt tests/requirements.yml > circleci-requirements.txt
+             echo $(pwd) >> circleci-requirements.txt
+             # Note that if the workflow is split, you will need to have the file `circleci-requirements.txt`
+             # passed from one build job to the other, either through caching or using workspaces.
+             echo "ANSIBLE_ROLE\'s value is ${ANSIBLE_ROLE}"
+             echo "TEST_REPORTS_DIR\'s value is ${TEST_REPORTS_DIR}"
+
+      - restore_cache:
+          key: v4-dependency-cache-{{ checksum "circleci-requirements.txt" }}
+
+      - run:
+          name: Install dependencies
+          command: |
+            if [ -d "${HOME}/.virtualenvs/ansible-role-testing"  ]
+            then
+                :
+            else
+                # Install docker module at user level, not venv, as Ansible's
+                # docker_container module seems to evade the venv (resets some
+                # environment variables ?)
+                pip install --user "pip>=9.0.1" "docker>=2.7,<3.0"
+                pushd ~/.virtualenvs
+                python -m virtualenv ansible-role-testing
+                popd
+                . ~/.virtualenvs/ansible-role-testing/bin/activate
+                pip install --upgrade -r tests/requirements.txt
+                ansible-galaxy install -r tests/requirements.yml -p tests/roles
+            fi
+            ls tests/roles
+
+      - save_cache:
+          # Make sure the "circleci-requirements.txt" file does not end-up
+          # being cached.
+          key: v4-dependency-cache-{{ checksum "circleci-requirements.txt" }}
+          paths:
+            - ~/.virtualenvs
+            - ~/cerebro-container-setup/tests/roles
+            # because we install docker's Python module with `--user`
+            - ~/.local/lib/python2.7/site-packages
+
+      - run:
+          name: Run tests
+          command: |
+            . ~/.virtualenvs/ansible-role-testing/bin/activate
+            tests/run-checks.sh
+            ansible-playbook -i tests/inventory tests/test.yml --connection=local
+
+# vim: et:sw=2:syntax=yaml:ts=2:

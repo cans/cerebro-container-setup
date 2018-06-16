@@ -1,0 +1,7 @@
+---
+cerebrosetup_host_config_dir: "{{ playbook_dir }}/configurations/"
+cerebrosetup_elasticsearch_hosts:
+  - uri: https://localhost:9300/
+    name: "test cluster"
+
+# vim: et:sw=2:syntax=yaml:ts=2:
